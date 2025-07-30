@@ -74,7 +74,8 @@ async def transcribe_audio(file: UploadFile = File(...)):
     with open(temp_path, "rb") as f:
         transcription = client.audio.transcriptions.create(
             model="whisper-1",
-            file=f
+            file=f,
+            language="en" # translate any language to english
         )
 
     return {"transcription": transcription.text}
