@@ -8,6 +8,7 @@ from agno.tools.googlesearch import GoogleSearchTools
 from agno.tools.duckduckgo import DuckDuckGoTools
 from dotenv import load_dotenv
 import os
+import tempfile
 
 import openai
 from openai import OpenAI
@@ -65,20 +66,38 @@ def convert_audio_to_text():
 
 
 
+# @app.post("/transcribe")
+# async def transcribe_audio(file: UploadFile = File(...)):
+#     temp_path = "temp_audio.webm"
+#     with open(temp_path, "wb") as f:
+#         f.write(await file.read())
+
+#     with open(temp_path, "rb") as f:
+#         transcription = client.audio.transcriptions.create(
+#             model="whisper-1",
+#             file=f,
+#             language="en" # translate any language to english
+#         )
+
+#     return {"transcription": transcription.text}
+
 @app.post("/transcribe")
 async def transcribe_audio(file: UploadFile = File(...)):
-    temp_path = "temp_audio.webm"
-    with open(temp_path, "wb") as f:
-        f.write(await file.read())
+    with tempfile.NamedTemporaryFile(delete=False, suffix=".webm") as tmp:
+        tmp.write(await file.read())
+        tmp_path = tmp.name
 
-    with open(temp_path, "rb") as f:
-        transcription = client.audio.transcriptions.create(
-            model="whisper-1",
-            file=f,
-            language="en" # translate any language to english
-        )
-
-    return {"transcription": transcription.text}
+    try:
+        with open(tmp_path, "rb") as audio_file:
+            transcription = client.audio.transcriptions.create(
+                model="whisper-1",
+                file=audio_file
+            )
+        return {"transcription": transcription.text}
+    except Exception as e:
+        return {"error": str(e)}
+    finally:
+        os.remove(tmp_path)
 
 # @app.post("/run-agent")
 # async def run_agent(prompt: Prompt):
