@@ -83,28 +83,17 @@ def convert_audio_to_text():
 
 @app.post("/transcribe")
 async def transcribe_audio(file: UploadFile = File(...)):
-    with tempfile.NamedTemporaryFile(delete=False, suffix=".webm") as tmp:
-        tmp.write(await file.read())
-        tmp_path = tmp.name
+    temp_path = "temp_audio.webm"
+    with open(temp_path, "wb") as f:
+        f.write(await file.read())
 
-    try:
-        with open(tmp_path, "rb") as audio_file:
-            transcription = client.audio.transcriptions.create(
-                model="whisper-1",
-                file=audio_file
-            )
-        return {"transcription": transcription.text}
-    except Exception as e:
-        return {"error": str(e)}
-    finally:
-        os.remove(tmp_path)
+    with open(temp_path, "rb") as f:
+        transcription = client.audio.transcriptions.create(
+            model="whisper-1",
+            file=f,
+            # language="en" # translate any language to english
+        )
 
-# @app.post("/run-agent")
-# async def run_agent(prompt: Prompt):
-#     try:
-#         run = agent.run(prompt.message)
-#         return {"response": run.content}
-#     except Exception as e:
-#         return {"error": str(e)}
+    return {"transcription": transcription.text}
     
 

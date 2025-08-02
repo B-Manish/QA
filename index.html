@@ -52,7 +52,7 @@
   </style>
 </head>
 <body>
-  <h1>🎙️ Manual Voice to Text</h1>
+  <h1>🎙️ Voice to Text</h1>
   <button class="start" onclick="startRecording()">Start Recording</button>
   <button class="stop" onclick="stopRecording()">Stop Recording</button>
 
@@ -66,11 +66,13 @@
 
     async function setupAudio() {
       stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+
       audioContext = new AudioContext();
       analyser = audioContext.createAnalyser();
       microphone = audioContext.createMediaStreamSource(stream);
       microphone.connect(analyser);
       analyser.fftSize = 512;
+
       drawWaveform();
     }
 
@@ -78,9 +80,9 @@
       if (!stream) await setupAudio();
 
       audioChunks = [];
-      mediaRecorder = new MediaRecorder(stream, { mimeType: 'audio/webm' });
+      mediaRecorder = new MediaRecorder(stream, { mimeType: 'audio/webm;codecs=opus' });
 
-      mediaRecorder.ondataavailable = e => {
+      mediaRecorder.ondataavailable = (e) => {
         if (e.data.size > 0) {
           audioChunks.push(e.data);
         }
@@ -89,7 +91,7 @@
       mediaRecorder.onstop = async () => {
         const blob = new Blob(audioChunks, { type: 'audio/webm' });
         const formData = new FormData();
-        formData.append("file", blob, "manual_recording.webm");
+        formData.append("file", blob, "recording.webm");
 
         document.getElementById("result").innerText = "⏳ Transcribing...";
 
@@ -100,8 +102,9 @@
           });
 
           const data = await res.json();
-          document.getElementById("result").innerText =
-            data.transcription ? "📝 " + data.transcription : "❌ Error: " + data.error;
+          document.getElementById("result").innerText = data.transcription
+            ? "📝 " + data.transcription
+            : "❌ Error: " + data.error;
         } catch (err) {
           document.getElementById("result").innerText = "❌ Error: " + err.message;
         }
